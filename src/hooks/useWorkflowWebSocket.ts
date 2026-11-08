@@ -1,94 +1,84 @@
-import { useEffect, useReducer } from "react";
-import type {
-	WorkflowState,
-	WorkflowUpdateMessage,
-	StepStatus,
-} from "../types";
-import { WORKFLOW_STEPS } from "../types";
+import { useEffect, useState } from "react";
+import type { WorkflowUpdateMessage } from "../types";
 
-type Action =
-	| { type: "CONNECTED" }
-	| { type: "DISCONNECTED" }
-	| { type: "UPDATE"; payload: WorkflowUpdateMessage }
-	| { type: "RESET" };
+export type Connection = "idle" | "connecting" | "open" | "reconnecting";
 
-const initialState: WorkflowState = {
-	instanceId: null,
-	currentStep: null,
-	stepStatuses: Object.fromEntries(
-		WORKFLOW_STEPS.map((step) => [step.name, "pending" as StepStatus]),
-	),
-	workflowStatus: "idle",
-	wsConnected: false,
-};
-
-function workflowReducer(state: WorkflowState, action: Action): WorkflowState {
-	switch (action.type) {
-		case "CONNECTED":
-			return { ...state, wsConnected: true };
-
-		case "DISCONNECTED":
-			return { ...state, wsConnected: false };
-
-		case "UPDATE":
-			return {
-				...state,
-				currentStep: action.payload.currentStep,
-				stepStatuses: action.payload.stepStatuses,
-				workflowStatus: action.payload.workflowStatus,
-			};
-
-		case "RESET":
-			return { ...initialState };
-
-		default:
-			return state;
-	}
+export interface LiveRun {
+	connection: Connection;
+	run: WorkflowUpdateMessage | null;
 }
 
-export function useWorkflowWebSocket(instanceId: string | null): WorkflowState {
-	const [state, dispatch] = useReducer(workflowReducer, initialState);
+const RETRY_DELAYS_MS = [500, 1000, 2000, 4000, 8000];
+
+function isUpdate(value: unknown): value is WorkflowUpdateMessage {
+	return (
+		typeof value === "object" &&
+		value !== null &&
+		(value as { type?: unknown }).type === "workflow_update" &&
+		Array.isArray((value as { events?: unknown }).events)
+	);
+}
+
+/**
+ * Subscribe to the live state of one run. Reconnects with backoff if the
+ * socket drops before the run has finished.
+ */
+export function useWorkflowWebSocket(instanceId: string | null): LiveRun {
+	const [live, setLive] = useState<LiveRun>({ connection: "idle", run: null });
 
 	useEffect(() => {
 		if (!instanceId) {
-			dispatch({ type: "RESET" });
+			setLive({ connection: "idle", run: null });
 			return;
 		}
 
-		// Determine WebSocket protocol based on current location
-		const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-		const wsUrl = `${protocol}//${window.location.host}/ws?instanceId=${instanceId}`;
+		let socket: WebSocket | null = null;
+		let retryTimer: ReturnType<typeof setTimeout> | undefined;
+		let attempt = 0;
+		let finished = false;
+		let disposed = false;
 
-		const ws = new WebSocket(wsUrl);
+		setLive({ connection: "connecting", run: null });
 
-		ws.onopen = () => {
-			dispatch({ type: "CONNECTED" });
-		};
+		const connect = () => {
+			const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+			const url = `${protocol}//${window.location.host}/ws?instanceId=${encodeURIComponent(instanceId)}`;
+			socket = new WebSocket(url);
 
-		ws.onclose = () => {
-			dispatch({ type: "DISCONNECTED" });
-		};
+			socket.onopen = () => {
+				attempt = 0;
+				setLive((prev) => ({ ...prev, connection: "open" }));
+			};
 
-		ws.onerror = () => {
-			// Connection errors handled by onclose
-		};
-
-		ws.onmessage = (event) => {
-			try {
-				const data = JSON.parse(event.data);
-
-				if (data.type === "workflow_update") {
-					dispatch({ type: "UPDATE", payload: data });
+			socket.onmessage = (event) => {
+				try {
+					const data: unknown = JSON.parse(event.data);
+					if (!isUpdate(data)) return;
+					finished = data.workflowStatus !== "running";
+					setLive({ connection: "open", run: data });
+				} catch {
+					// Ignore anything that is not a state message.
 				}
-			} catch {
-				// Ignore malformed messages
-			}
+			};
+
+			socket.onclose = () => {
+				if (disposed || finished || attempt >= RETRY_DELAYS_MS.length) {
+					setLive((prev) => ({ ...prev, connection: "idle" }));
+					return;
+				}
+				setLive((prev) => ({ ...prev, connection: "reconnecting" }));
+				retryTimer = setTimeout(connect, RETRY_DELAYS_MS[attempt++]);
+			};
 		};
+
+		connect();
 
 		return () => {
-			ws.close();
+			disposed = true;
+			clearTimeout(retryTimer);
+			socket?.close(1000, "Page closed the run");
 		};
 	}, [instanceId]);
 
-	return state;
+	return live;
 }
