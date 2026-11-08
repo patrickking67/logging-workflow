@@ -1,0 +1,26 @@
+# logging-workflow
+
+> A Cloudflare Workers app that starts a four step Workflow run and logs every step live in the browser over a WebSocket from a Durable Object. Built with React, Vite and Tailwind on the front end and Workflows plus SQLite backed Durable Objects on the back end. Started from Cloudflare's Workflows Starter Template (MIT). There is no public deployment; it runs locally with `npm ci && npm run dev`.
+
+## Docs
+
+- [README](https://github.com/patrickking67/logging-workflow/blob/main/README.md): what it does, quickstart, architecture, tests
+- [AGENTS.md](https://github.com/patrickking67/logging-workflow/blob/main/AGENTS.md): commands, layout, conventions and rules for coding agents
+- [CONTRIBUTING](https://github.com/patrickking67/logging-workflow/blob/main/CONTRIBUTING.md): setup, branches, commits, checks
+- [SECURITY](https://github.com/patrickking67/logging-workflow/blob/main/SECURITY.md): reporting and the demo's trust model
+- [CHANGELOG](https://github.com/patrickking67/logging-workflow/blob/main/CHANGELOG.md): changes since the template import
+
+## Source
+
+- [worker/index.ts](https://github.com/patrickking67/logging-workflow/blob/main/worker/index.ts): HTTP routes and input validation
+- [worker/workflow.ts](https://github.com/patrickking67/logging-workflow/blob/main/worker/workflow.ts): the Workflow and its four steps
+- [worker/durable-object.ts](https://github.com/patrickking67/logging-workflow/blob/main/worker/durable-object.ts): run state storage and WebSocket fan-out
+- [worker/status.ts](https://github.com/patrickking67/logging-workflow/blob/main/worker/status.ts): pure run state rules and shared types
+- [src/App.tsx](https://github.com/patrickking67/logging-workflow/blob/main/src/App.tsx): the React page
+- [wrangler.jsonc](https://github.com/patrickking67/logging-workflow/blob/main/wrangler.jsonc): Worker bindings and config
+
+## Upstream
+
+- [Cloudflare Workflows Starter Template](https://github.com/cloudflare/templates/tree/main/workflows-starter-template): the template this repo started from
+- [Cloudflare Workflows docs](https://developers.cloudflare.com/workflows/)
+- [Durable Objects docs](https://developers.cloudflare.com/durable-objects/)
