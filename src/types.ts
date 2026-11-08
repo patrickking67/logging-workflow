@@ -1,62 +1,42 @@
 /**
- * Shared TypeScript types for the Workflows starter template
+ * Front-end types. Run state shapes come from the Worker so both sides agree.
  */
+import type { StepName } from "../worker/status";
 
-export type StepStatus =
-	| "pending"
-	| "running"
-	| "waiting"
-	| "completed"
-	| "error";
-export type WorkflowStatus = "idle" | "running" | "completed" | "error";
+export type {
+	RunEvent,
+	RunStatus,
+	StepName,
+	StepStatus,
+	WorkflowUpdateMessage,
+} from "../worker/status";
 
 export interface StepDefinition {
-	id: string;
-	name: string;
+	name: StepName;
 	description: string;
+	/** Lines in the source shown by CodeDisplay, 1-based and inclusive. */
 	lineRange: [number, number];
 }
 
-export interface WorkflowState {
-	instanceId: string | null;
-	currentStep: string | null;
-	stepStatuses: Record<string, StepStatus>;
-	workflowStatus: WorkflowStatus;
-	wsConnected: boolean;
-}
-
-export interface WorkflowUpdateMessage {
-	type: "workflow_update";
-	currentStep: string | null;
-	stepStatuses: Record<string, StepStatus>;
-	workflowStatus: "running" | "completed" | "error";
-	timestamp: number;
-}
-
-// Step definitions for the workflow
 export const WORKFLOW_STEPS: StepDefinition[] = [
 	{
-		id: "process-data",
 		name: "process data",
-		description: "Break code into durable steps",
-		lineRange: [3, 7],
+		description: "Durable work that returns data",
+		lineRange: [3, 6],
 	},
 	{
-		id: "wait-2-seconds",
 		name: "wait 2 seconds",
-		description: "Add time-based delays",
-		lineRange: [9, 10],
+		description: "A durable sleep",
+		lineRange: [8, 8],
 	},
 	{
-		id: "wait-for-approval",
 		name: "wait for approval",
-		description: "Pause for external events",
-		lineRange: [12, 16],
+		description: "Pauses until you approve or reject",
+		lineRange: [10, 13],
 	},
 	{
-		id: "final",
 		name: "final",
-		description: "Use data from previous steps",
-		lineRange: [18, 22],
+		description: "Uses results from earlier steps",
+		lineRange: [15, 18],
 	},
 ];

@@ -3,35 +3,160 @@
 @tailwind utilities;
 
 @layer base {
+	/* Colors are RGB channels so Tailwind can add opacity, e.g. bg-run/10. */
 	:root {
-		font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-		line-height: 1.5;
-		font-weight: 400;
+		--paper: 243 245 247;
+		--surface: 255 255 255;
+		--ink: 23 33 43;
+		--muted: 91 104 117;
+		--rule: 213 219 225;
+		--run: 43 89 195;
+		--wait: 154 103 0;
+		--done: 31 122 77;
+		--fail: 180 35 24;
 
+		color-scheme: light;
+		font-family:
+			"IBM Plex Sans",
+			system-ui,
+			-apple-system,
+			"Segoe UI",
+			sans-serif;
+		line-height: 1.5;
 		font-synthesis: none;
 		text-rendering: optimizeLegibility;
 		-webkit-font-smoothing: antialiased;
 		-moz-osx-font-smoothing: grayscale;
 	}
 
+	@media (prefers-color-scheme: dark) {
+		:root {
+			--paper: 18 23 29;
+			--surface: 26 33 41;
+			--ink: 230 235 240;
+			--muted: 152 164 176;
+			--rule: 44 54 64;
+			--run: 143 176 255;
+			--wait: 227 179 65;
+			--done: 92 196 143;
+			--fail: 243 139 128;
+
+			color-scheme: dark;
+		}
+	}
+
 	body {
 		margin: 0;
 		min-height: 100vh;
+		background: rgb(var(--paper));
+		color: rgb(var(--ink));
+	}
+
+	:focus-visible {
+		outline: 2px solid rgb(var(--run));
+		outline-offset: 2px;
+	}
+
+	summary:focus-visible {
+		border-radius: 4px;
+	}
+}
+
+@layer components {
+	.btn {
+		@apply inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors;
+	}
+
+	.btn:disabled {
+		@apply cursor-not-allowed opacity-50;
+	}
+
+	.btn-lg {
+		@apply px-5 py-2.5 text-base;
+	}
+
+	.btn-primary {
+		background: rgb(var(--ink));
+		color: rgb(var(--paper));
+	}
+
+	.btn-primary:not(:disabled):hover {
+		background: rgb(var(--run));
+		color: rgb(var(--surface));
+	}
+
+	.btn-quiet {
+		border: 1px solid rgb(var(--rule));
+		background: rgb(var(--surface));
+		color: rgb(var(--ink));
+	}
+
+	.btn-quiet:not(:disabled):hover {
+		border-color: rgb(var(--fail));
+		color: rgb(var(--fail));
+	}
+
+	.link {
+		color: rgb(var(--ink));
+		text-decoration: underline;
+		text-decoration-color: rgb(var(--rule));
+		text-underline-offset: 3px;
+	}
+
+	.link:hover {
+		text-decoration-color: currentColor;
+	}
+
+	.skip-link {
+		position: absolute;
+		left: 1rem;
+		top: -3rem;
+		z-index: 50;
+		padding: 0.5rem 0.75rem;
+		border-radius: 6px;
+		background: rgb(var(--ink));
+		color: rgb(var(--paper));
+	}
+
+	.skip-link:focus {
+		top: 1rem;
 	}
 }
 
 @layer utilities {
 	.font-mono {
 		font-family:
-			ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
-			"Courier New", monospace;
+			"IBM Plex Mono",
+			ui-monospace,
+			SFMono-Regular,
+			Menlo,
+			Consolas,
+			monospace;
 	}
 
-	.ring-glass {
-		@apply ring-1 ring-black/5 dark:ring-white/10;
+	/* The newest log line lights up briefly, then settles. */
+	.log-newest {
+		animation: log-arrive 1.6s ease-out;
+	}
+}
+
+@keyframes log-arrive {
+	from {
+		background-color: rgb(var(--run) / 0.16);
+	}
+	to {
+		background-color: transparent;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.log-newest {
+		animation: none;
 	}
 
-	.shadow-float {
-		@apply shadow-lg shadow-black/5 dark:shadow-black/20;
+	*,
+	*::before,
+	*::after {
+		transition-duration: 0.01ms !important;
 	}
 }

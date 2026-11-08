@@ -1,121 +1,212 @@
-import { useState, useEffect } from "react";
-import { WorkflowDiagram } from "./components/WorkflowDiagram";
+import { useState } from "react";
 import { CodeDisplay } from "./components/CodeDisplay";
-import { BackgroundDots } from "./components/BackgroundDots";
+import { RunLog } from "./components/RunLog";
+import { StepList } from "./components/StepList";
 import { useWorkflowWebSocket } from "./hooks/useWorkflowWebSocket";
-import { WORKFLOW_STEPS } from "./types";
+import type { Connection } from "./hooks/useWorkflowWebSocket";
+
+const REPO_URL = "https://github.com/patrickking67/logging-workflow";
+const TEMPLATE_URL =
+	"https://github.com/cloudflare/templates/tree/main/workflows-starter-template";
+
+const CONNECTION_WORDS: Record<Connection, string> = {
+	idle: "Not connected",
+	connecting: "Connecting",
+	open: "Live",
+	reconnecting: "Reconnecting",
+};
+
+async function readError(response: Response, fallback: string): Promise<string> {
+	try {
+		const body = (await response.json()) as { error?: unknown };
+		return typeof body.error === "string" ? body.error : fallback;
+	} catch {
+		return fallback;
+	}
+}
 
 function App() {
 	const [instanceId, setInstanceId] = useState<string | null>(null);
-	const [isStarting, setIsStarting] = useState(false);
-	const workflowState = useWorkflowWebSocket(instanceId);
+	const [starting, setStarting] = useState(false);
+	const [startError, setStartError] = useState<string | null>(null);
+	const [sendingApproval, setSendingApproval] = useState(false);
+	const [approvalError, setApprovalError] = useState<string | null>(null);
 
-	useEffect(() => {
-		if (workflowState.workflowStatus === "completed") {
-			const timer = setTimeout(() => {
-				setInstanceId(null);
-			}, 1500);
-			return () => clearTimeout(timer);
-		}
-	}, [workflowState.workflowStatus]);
+	const { connection, run } = useWorkflowWebSocket(instanceId);
+	const runStatus = run?.workflowStatus ?? null;
+	const isActive = instanceId !== null && (runStatus === null || runStatus === "running");
+	const events = run?.events ?? [];
 
-	useEffect(() => {
-		if (
-			workflowState.workflowStatus === "running" &&
-			workflowState.currentStep
-		) {
-			setIsStarting(false);
-		}
-	}, [workflowState.workflowStatus, workflowState.currentStep]);
-
-	const handleStartWorkflow = async () => {
-		setIsStarting(true);
-
+	const startRun = async () => {
+		setStarting(true);
+		setStartError(null);
+		setApprovalError(null);
 		try {
-			const response = await fetch("/api/workflow/start", {
-				method: "POST",
-			});
-
+			const response = await fetch("/api/workflow/start", { method: "POST" });
 			if (!response.ok) {
-				throw new Error("Failed to start workflow");
+				throw new Error(await readError(response, "The Worker did not start the run."));
 			}
-
-			const data = await response.json();
+			const data = (await response.json()) as { instanceId: string };
 			setInstanceId(data.instanceId);
-		} catch {
-			alert("Failed to start workflow. Please try again.");
-			setIsStarting(false);
+		} catch (err) {
+			setStartError(
+				`${err instanceof Error ? err.message : "The run did not start."} Check that the dev server is running, then try again.`,
+			);
+		} finally {
+			setStarting(false);
 		}
 	};
 
+	const decide = async (approved: boolean) => {
+		if (!instanceId) return;
+		setSendingApproval(true);
+		setApprovalError(null);
+		try {
+			const response = await fetch(
+				`/api/workflow/event/${encodeURIComponent(instanceId)}`,
+				{
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						approved,
+						comment: approved ? "Approved in the browser" : "Rejected in the browser",
+					}),
+				},
+			);
+			if (!response.ok) {
+				setApprovalError(await readError(response, "The answer was not delivered."));
+			}
+		} catch {
+			setApprovalError("The answer was not delivered. Check your connection and try again.");
+		} finally {
+			setSendingApproval(false);
+		}
+	};
+
+	const startLabel = starting
+		? "Starting"
+		: runStatus === "completed" || runStatus === "error"
+			? "Start another run"
+			: "Start a run";
+
 	return (
-		<div className="min-h-screen bg-neutral-50/30 dark:bg-neutral-950 flex flex-col relative">
-			{/* Background dots across entire page */}
-			<div className="absolute inset-0 text-neutral-200/50 dark:text-neutral-700/40 overflow-hidden">
-				<BackgroundDots />
-			</div>
+		<div className="min-h-screen bg-paper text-ink">
+			<a href="#log" className="skip-link">
+				Skip to the run log
+			</a>
 
-			{/* Minimal Integrated Header */}
-			<header className="px-6 pt-6 pb-4 relative z-10">
-				<div className="flex items-center justify-between">
-					<div className="flex items-center gap-3">
-						<svg
-							role="img"
-							viewBox="0 0 460 271.2"
-							aria-hidden="true"
-							className="h-5 w-auto opacity-90"
-						>
-							<path
-								fill="#FBAD41"
-								d="M328.6,125.6c-0.8,0-1.5,0.6-1.8,1.4l-4.8,16.7c-2.1,7.2-1.3,13.8,2.2,18.7c3.2,4.5,8.6,7.1,15.1,7.4l26.2,1.6c0.8,0,1.5,0.4,1.9,1c0.4,0.6,0.5,1.5,0.3,2.2c-0.4,1.2-1.6,2.1-2.9,2.2l-27.3,1.6c-14.8,0.7-30.7,12.6-36.3,27.2l-2,5.1c-0.4,1,0.3,2,1.4,2h93.8c1.1,0,2.1-0.7,2.4-1.8c1.6-5.8,2.5-11.9,2.5-18.2c0-37-30.2-67.2-67.3-67.2C330.9,125.5,329.7,125.5,328.6,125.6z"
-							/>
-							<path
-								fill="#F6821F"
-								d="M292.8,204.4c2.1-7.2,1.3-13.8-2.2-18.7c-3.2-4.5-8.6-7.1-15.1-7.4l-123.1-1.6c-0.8,0-1.5-0.4-1.9-1s-0.5-1.4-0.3-2.2c0.4-1.2,1.6-2.1,2.9-2.2l124.2-1.6c14.7-0.7,30.7-12.6,36.3-27.2l7.1-18.5c0.3-0.8,0.4-1.6,0.2-2.4c-8-36.2-40.3-63.2-78.9-63.2c-35.6,0-65.8,23-76.6,54.9c-7-5.2-15.9-8-25.5-7.1c-17.1,1.7-30.8,15.4-32.5,32.5c-0.4,4.4-0.1,8.7,0.9,12.7c-27.9,0.8-50.2,23.6-50.2,51.7c0,2.5,0.2,5,0.5,7.5c0.2,1.2,1.2,2.1,2.4,2.1h227.2c1.3,0,2.5-0.9,2.9-2.2L292.8,204.4z"
-							/>
-						</svg>
-						<div className="w-px h-4 bg-neutral-300/50 dark:bg-neutral-600/50" />
-						<h1 className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
-							Workflows Starter Template
+			<div className="mx-auto max-w-6xl px-4 pb-12 pt-8 sm:px-8 sm:pt-12">
+				<header className="flex flex-col gap-6 border-b border-rule pb-8 sm:flex-row sm:items-end sm:justify-between">
+					<div className="max-w-xl">
+						<h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+							Workflow run log
 						</h1>
+						<p className="mt-3 text-base leading-7 text-muted">
+							Start a Cloudflare Workflow and watch each step get logged as it
+							happens. The run pauses for your approval before its last step.
+						</p>
 					</div>
-
-					<a
-						href="https://developers.cloudflare.com/workflows"
-						target="_blank"
-						rel="noopener noreferrer"
-						className="text-xs font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 transition-colors"
+					<button
+						type="button"
+						onClick={startRun}
+						disabled={starting || isActive}
+						className="btn btn-primary btn-lg self-start sm:self-auto"
 					>
-						Documentation →
-					</a>
-				</div>
-			</header>
+						{startLabel}
+					</button>
+				</header>
 
-			{/* Main content - unified canvas */}
-			<main className="flex-1 flex flex-col lg:flex-row overflow-hidden relative z-10">
-				{/* Left side - Code (responsive width) */}
-				<div className="w-full lg:w-[60%] overflow-hidden px-6 pb-6">
-					<CodeDisplay
-						currentStep={workflowState.currentStep}
-						workflowStatus={workflowState.workflowStatus}
-						onStartWorkflow={handleStartWorkflow}
-						isStarting={isStarting}
-					/>
-				</div>
+				{startError && (
+					<p role="alert" className="mt-6 rounded-md border border-fail/40 bg-fail/[0.06] p-3 text-sm text-fail">
+						{startError}
+					</p>
+				)}
 
-				{/* Right side - Diagram (responsive width) */}
-				<div className="flex-1 overflow-hidden px-6 lg:pl-8 lg:pr-6 pb-6">
-					<WorkflowDiagram
-						steps={WORKFLOW_STEPS}
-						stepStatuses={workflowState.stepStatuses}
-						currentStep={workflowState.currentStep}
-						instanceId={instanceId}
-						workflowStatus={workflowState.workflowStatus}
-						onStartWorkflow={handleStartWorkflow}
-						isStarting={isStarting}
-					/>
-				</div>
-			</main>
+				<main className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-0">
+					<section aria-labelledby="steps-heading" className="lg:border-r lg:border-rule lg:pr-10">
+						<h2 id="steps-heading" className="mb-5 text-lg font-semibold">
+							Steps
+						</h2>
+						<StepList
+							statuses={run?.stepStatuses ?? null}
+							events={events}
+							approval={{
+								pending: run?.stepStatuses["wait for approval"] === "waiting",
+								sending: sendingApproval,
+								error: approvalError,
+								onDecide: decide,
+							}}
+						/>
+					</section>
+
+					<section id="log" aria-labelledby="log-heading" className="min-w-0 lg:pl-10">
+						<div className="mb-5 flex flex-wrap items-baseline justify-between gap-2">
+							<h2 id="log-heading" className="text-lg font-semibold">
+								Run log
+							</h2>
+							{instanceId && (
+								<p className="text-sm text-muted">
+									<span
+										aria-hidden="true"
+										className={`mr-1.5 inline-block h-2 w-2 rounded-full ${
+											isActive && connection === "open" ? "bg-done" : "bg-rule"
+										}`}
+									/>
+									{runStatus === "completed"
+										? "Finished"
+										: runStatus === "error"
+											? "Stopped"
+											: CONNECTION_WORDS[connection]}
+								</p>
+							)}
+						</div>
+
+						<div className="rounded-md border border-rule bg-surface py-3">
+							<RunLog
+								events={events}
+								empty={
+									<p className="px-4 text-sm text-muted">
+										{instanceId
+											? "Waiting for the first step."
+											: "No run yet. Start a run and each step will be logged here with its time."}
+									</p>
+								}
+							/>
+						</div>
+
+						{instanceId && (
+							<p className="mt-3 break-all font-mono text-xs text-muted">
+								Run ID {instanceId}
+							</p>
+						)}
+					</section>
+				</main>
+
+				<details className="mt-12 border-t border-rule pt-6">
+					<summary className="cursor-pointer text-lg font-semibold">
+						The workflow code
+					</summary>
+					<p className="mt-2 mb-4 text-sm text-muted">
+						A shortened copy of <code className="font-mono">worker/workflow.ts</code>. The
+						step that is running is highlighted.
+					</p>
+					<CodeDisplay currentStep={run?.currentStep ?? null} />
+				</details>
+
+				<footer className="mt-12 border-t border-rule pt-6 text-sm leading-6 text-muted">
+					<p>
+						Runs on Cloudflare Workers, Workflows and Durable Objects.{" "}
+						<a className="link" href={REPO_URL}>
+							Source on GitHub
+						</a>
+						. Started from Cloudflare&apos;s{" "}
+						<a className="link" href={TEMPLATE_URL}>
+							Workflows starter template
+						</a>{" "}
+						(MIT).
+					</p>
+				</footer>
+			</div>
 		</div>
 	);
 }
