@@ -1,7 +1,14 @@
+import { mkdirSync } from "node:fs";
 import { defineWorkersConfig } from "@cloudflare/vitest-pool-workers/config";
+
+// wrangler.jsonc points static assets at ./dist. The Workers pool refuses to
+// start if that folder is missing, so a fresh clone could not run tests before
+// a build. The tests never read the assets, so an empty folder is enough.
+mkdirSync("./dist", { recursive: true });
 
 export default defineWorkersConfig({
 	test: {
+		exclude: ["**/node_modules/**", "**/dist/**", ".worktrees/**", ".claude/**"],
 		poolOptions: {
 			workers: {
 				wrangler: { configPath: "./wrangler.jsonc" },

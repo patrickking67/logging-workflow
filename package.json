@@ -22,8 +22,9 @@
 	"scripts": {
 		"dev": "vite",
 		"build": "tsc -b && vite build",
-		"check": "tsc && wrangler deploy --dry-run",
-		"lint": "eslint .",
+		"check": "npm run lint && npm run typecheck && npm test && npm run build && wrangler deploy --dry-run",
+		"lint": "eslint . --max-warnings 0",
+		"typecheck": "tsc -b",
 		"preview": "npm run build && vite preview",
 		"deploy": "npm run build && wrangler deploy",
 		"cf-typegen": "wrangler types",
