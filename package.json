@@ -1,6 +1,7 @@
 {
 	"name": "logging-workflow",
 	"private": true,
+	"license": "MIT",
 	"description": "Interactive starter template demonstrating Cloudflare Workflows with real-time status updates",
 	"cloudflare": {
 		"label": "Workflows Starter",
