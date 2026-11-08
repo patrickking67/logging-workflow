@@ -6,6 +6,10 @@ import { defineWorkersConfig } from "@cloudflare/vitest-pool-workers/config";
 // a build. The tests never read the assets, so an empty folder is enough.
 mkdirSync("./dist", { recursive: true });
 
+// `npm test` runs test/workflow.test.ts in its own Vitest run. On Linux, once
+// another test file has finished in the shared runtime, new Workflow instances
+// never start (the engine cannot load worker/index.ts any more), so every test
+// that runs a Workflow lives in that one file.
 export default defineWorkersConfig({
 	test: {
 		// Workflow tests run real one second steps; leave room on slow CI runners.

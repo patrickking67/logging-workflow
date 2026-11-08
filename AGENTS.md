@@ -38,7 +38,7 @@ All verified on 2026-11-07.
 | Everything | `npm run check` | Lint, typecheck, tests, build, `wrangler deploy --dry-run`. Must pass before you commit |
 | Lint | `npm run lint` | ESLint, zero warnings allowed |
 | Typecheck | `npm run typecheck` | `tsc -b` over app, node and worker projects |
-| Test | `npm test` | Vitest in workerd. Info lines such as "Instance dispose" and "uncaught exception" from the timeout test are expected; read the pass count |
+| Test | `npm test` | Vitest in workerd, two runs: everything else, then `test/workflow.test.ts` alone. Tests that run a Workflow must go in that file (see `vitest.config.ts`). Info lines such as "Instance dispose" and "uncaught exception" are expected; read the pass counts |
 | Build | `npm run build` | Into `dist/` |
 | Preview build | `npm run preview` | Builds, then serves on http://localhost:4173 with the Worker |
 | Worker types | `npm run cf-typegen` | Run after changing bindings in `wrangler.jsonc`, then commit the regenerated file |

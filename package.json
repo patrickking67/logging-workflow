@@ -13,7 +13,7 @@
 		"preview": "npm run build && vite preview",
 		"deploy": "npm run build && wrangler deploy",
 		"cf-typegen": "wrangler types",
-		"test": "vitest run"
+		"test": "vitest run --exclude test/workflow.test.ts && vitest run test/workflow.test.ts"
 	},
 	"dependencies": {
 		"react": "^19.1.2",

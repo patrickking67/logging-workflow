@@ -1,5 +1,8 @@
-import { env, introspectWorkflowInstance } from "cloudflare:test";
+import { SELF, env, introspectWorkflowInstance } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
+import { isValidInstanceId } from "../worker/index";
+
+const BASE = "https://example.com";
 
 function statusFor(instanceId: string) {
 	return env.WORKFLOW_STATUS.get(env.WORKFLOW_STATUS.idFromName(instanceId));
@@ -72,4 +75,27 @@ describe("MyWorkflow", () => {
 		expect(state.stepStatuses.final).toBe("pending");
 		expect(state.error).toBeTruthy();
 	});
+
+	it("starts a run, accepts an approval and reports the finished run", async () => {
+		const start = await SELF.fetch(`${BASE}/api/workflow/start`, { method: "POST" });
+		expect(start.status).toBe(200);
+		const { instanceId } = await start.json<{ instanceId: string }>();
+		expect(isValidInstanceId(instanceId)).toBe(true);
+
+		// Workflows keeps an event sent before the run reaches waitForEvent.
+		const approve = await SELF.fetch(`${BASE}/api/workflow/event/${instanceId}`, {
+			method: "POST",
+			body: JSON.stringify({ approved: true, comment: "from the API test" }),
+		});
+		expect(approve.status).toBe(200);
+
+		let status = "";
+		for (let i = 0; i < 100 && status !== "complete"; i++) {
+			await new Promise((resolve) => setTimeout(resolve, 200));
+			const response = await SELF.fetch(`${BASE}/api/workflow/status/${instanceId}`);
+			expect(response.status).toBe(200);
+			status = (await response.json<{ status: string }>()).status;
+		}
+		expect(status).toBe("complete");
+	}, 30_000);
 });
