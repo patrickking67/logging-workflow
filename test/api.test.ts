@@ -1,4 +1,4 @@
-import { SELF, env, introspectWorkflow } from "cloudflare:test";
+import { SELF } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
 import { isValidInstanceId, parseApproval } from "../worker/index";
 
@@ -32,26 +32,28 @@ describe("input validation", () => {
 });
 
 describe("routes", () => {
-	it("starts a run", async () => {
-		// Capture the run so it finishes quickly and is cleaned up.
-		await using runs = await introspectWorkflow(env.MY_WORKFLOW);
-		await runs.modifyAll(async (m) => {
-			await m.disableSleeps();
-			await m.mockEvent({ type: "user-approval", payload: { approved: true } });
+	it("starts a run, accepts an approval and reports the finished run", async () => {
+		const start = await SELF.fetch(`${BASE}/api/workflow/start`, { method: "POST" });
+		expect(start.status).toBe(200);
+		const { instanceId } = await start.json<{ instanceId: string }>();
+		expect(isValidInstanceId(instanceId)).toBe(true);
+
+		// Workflows keeps an event sent before the run reaches waitForEvent.
+		const approve = await SELF.fetch(`${BASE}/api/workflow/event/${instanceId}`, {
+			method: "POST",
+			body: JSON.stringify({ approved: true, comment: "from the API test" }),
 		});
+		expect(approve.status).toBe(200);
 
-		const response = await SELF.fetch(`${BASE}/api/workflow/start`, { method: "POST" });
-		expect(response.status).toBe(200);
-		const body = await response.json<{ instanceId: string }>();
-		expect(isValidInstanceId(body.instanceId)).toBe(true);
-
-		const [run] = runs.get();
-		await run.waitForStatus("complete");
-
-		const status = await SELF.fetch(`${BASE}/api/workflow/status/${body.instanceId}`);
-		expect(status.status).toBe(200);
-		expect(await status.json()).toMatchObject({ status: "complete" });
-	});
+		let status = "";
+		for (let i = 0; i < 100 && status !== "complete"; i++) {
+			await new Promise((resolve) => setTimeout(resolve, 200));
+			const response = await SELF.fetch(`${BASE}/api/workflow/status/${instanceId}`);
+			expect(response.status).toBe(200);
+			status = (await response.json<{ status: string }>()).status;
+		}
+		expect(status).toBe("complete");
+	}, 30_000);
 
 	it("rejects the wrong method", async () => {
 		const response = await SELF.fetch(`${BASE}/api/workflow/start`);

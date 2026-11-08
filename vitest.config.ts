@@ -8,6 +8,8 @@ mkdirSync("./dist", { recursive: true });
 
 export default defineWorkersConfig({
 	test: {
+		// Workflow tests run real one second steps; leave room on slow CI runners.
+		testTimeout: 20_000,
 		exclude: ["**/node_modules/**", "**/dist/**", ".worktrees/**", ".claude/**"],
 		poolOptions: {
 			workers: {
