@@ -7,6 +7,14 @@ updates:
     groups:
       npm-minor-and-patch:
         update-types: [minor, patch]
+    ignore:
+      # typescript-eslint 8 supports TypeScript below 6.1 only.
+      - dependency-name: typescript
+        versions: [">=7"]
+      # 0.13 and later need Vitest 4, where errors thrown by Durable Object
+      # RPC methods fail the run as unhandled rejections.
+      - dependency-name: "@cloudflare/vitest-pool-workers"
+        versions: [">=0.13"]
 
   - package-ecosystem: github-actions
     directory: /
