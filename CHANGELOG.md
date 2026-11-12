@@ -18,6 +18,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- Tailwind CSS 3 to 4, built with `@tailwindcss/vite`. The theme moved from `tailwind.config.js` into `src/index.css`. Tailwind 4 needs Safari 16.4, Chrome 111 or Firefox 128 and later.
 - Redesigned the page around the run log and an ordered step list, with light and dark themes, visible focus, reduced motion support and a layout that holds at 375px.
 - The dev server runs on port 4109 instead of 5173.
 - Rewrote the README for this project, with credit to the upstream template.

@@ -31,7 +31,7 @@ export function RunLog({ events, empty }: RunLogProps) {
 	}
 
 	return (
-		<div ref={scrollRef} className="max-h-[26rem] overflow-y-auto">
+		<div ref={scrollRef} className="max-h-104 overflow-y-auto">
 			<ol
 				role="log"
 				aria-live="polite"
@@ -44,7 +44,7 @@ export function RunLog({ events, empty }: RunLogProps) {
 					return (
 						<li
 							key={`${event.at}-${index}`}
-							className={`grid grid-cols-[6.25rem_1fr] gap-x-3 rounded-sm px-2 sm:grid-cols-[6.25rem_10.5rem_1fr] ${
+							className={`grid grid-cols-[6.25rem_1fr] gap-x-3 rounded-xs px-2 sm:grid-cols-[6.25rem_10.5rem_1fr] ${
 								isNewest ? "log-newest" : ""
 							} ${event.step === null ? "font-semibold" : ""}`}
 						>
@@ -56,7 +56,7 @@ export function RunLog({ events, empty }: RunLogProps) {
 								{formatOffset(event.at - startedAt)}
 							</time>
 							<span className="hidden truncate text-ink sm:block">{subject}</span>
-							<span className={`min-w-0 break-words ${STATUS_TONE[event.status]}`}>
+							<span className={`min-w-0 wrap-break-word ${STATUS_TONE[event.status]}`}>
 								<span className="text-ink sm:hidden">{subject} </span>
 								{describeEvent(event)}
 							</span>

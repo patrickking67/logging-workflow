@@ -1,9 +1,90 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+/*
+	Colors are CSS variables set below, so light and dark mode follow the
+	system setting without dark: variants.
+*/
+@theme {
+	--color-paper: rgb(var(--paper));
+	--color-surface: rgb(var(--surface));
+	--color-ink: rgb(var(--ink));
+	--color-muted: rgb(var(--muted));
+	--color-rule: rgb(var(--rule));
+	--color-run: rgb(var(--run));
+	--color-wait: rgb(var(--wait));
+	--color-done: rgb(var(--done));
+	--color-fail: rgb(var(--fail));
+
+	--font-mono:
+		"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+@utility btn {
+	@apply inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors;
+
+	&:disabled {
+		@apply cursor-not-allowed opacity-50;
+	}
+}
+
+@utility btn-lg {
+	@apply px-5 py-2.5 text-base;
+}
+
+@utility btn-primary {
+	background: rgb(var(--ink));
+	color: rgb(var(--paper));
+
+	&:not(:disabled):hover {
+		background: rgb(var(--run));
+		color: rgb(var(--surface));
+	}
+}
+
+@utility btn-quiet {
+	border: 1px solid rgb(var(--rule));
+	background: rgb(var(--surface));
+	color: rgb(var(--ink));
+
+	&:not(:disabled):hover {
+		border-color: rgb(var(--fail));
+		color: rgb(var(--fail));
+	}
+}
+
+@utility link {
+	color: rgb(var(--ink));
+	text-decoration: underline;
+	text-decoration-color: rgb(var(--rule));
+	text-underline-offset: 3px;
+
+	&:hover {
+		text-decoration-color: currentColor;
+	}
+}
+
+@utility skip-link {
+	position: absolute;
+	left: 1rem;
+	top: -3rem;
+	z-index: 50;
+	padding: 0.5rem 0.75rem;
+	border-radius: 6px;
+	background: rgb(var(--ink));
+	color: rgb(var(--paper));
+
+	&:focus {
+		top: 1rem;
+	}
+}
+
+/* The newest log line lights up briefly, then settles. */
+@utility log-newest {
+	animation: log-arrive 1.6s ease-out;
+}
 
 @layer base {
-	/* Colors are RGB channels so Tailwind can add opacity, e.g. bg-run/10. */
+	/* Colors are RGB channels so rgb(var(--run) / 0.16) style alpha works. */
 	:root {
 		--paper: 243 245 247;
 		--surface: 255 255 255;
@@ -52,6 +133,12 @@
 		color: rgb(var(--ink));
 	}
 
+	/* Tailwind 4 leaves buttons with the default cursor; keep the pointer. */
+	button:not(:disabled),
+	[role="button"]:not(:disabled) {
+		cursor: pointer;
+	}
+
 	:focus-visible {
 		outline: 2px solid rgb(var(--run));
 		outline-offset: 2px;
@@ -59,84 +146,6 @@
 
 	summary:focus-visible {
 		border-radius: 4px;
-	}
-}
-
-@layer components {
-	.btn {
-		@apply inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors;
-	}
-
-	.btn:disabled {
-		@apply cursor-not-allowed opacity-50;
-	}
-
-	.btn-lg {
-		@apply px-5 py-2.5 text-base;
-	}
-
-	.btn-primary {
-		background: rgb(var(--ink));
-		color: rgb(var(--paper));
-	}
-
-	.btn-primary:not(:disabled):hover {
-		background: rgb(var(--run));
-		color: rgb(var(--surface));
-	}
-
-	.btn-quiet {
-		border: 1px solid rgb(var(--rule));
-		background: rgb(var(--surface));
-		color: rgb(var(--ink));
-	}
-
-	.btn-quiet:not(:disabled):hover {
-		border-color: rgb(var(--fail));
-		color: rgb(var(--fail));
-	}
-
-	.link {
-		color: rgb(var(--ink));
-		text-decoration: underline;
-		text-decoration-color: rgb(var(--rule));
-		text-underline-offset: 3px;
-	}
-
-	.link:hover {
-		text-decoration-color: currentColor;
-	}
-
-	.skip-link {
-		position: absolute;
-		left: 1rem;
-		top: -3rem;
-		z-index: 50;
-		padding: 0.5rem 0.75rem;
-		border-radius: 6px;
-		background: rgb(var(--ink));
-		color: rgb(var(--paper));
-	}
-
-	.skip-link:focus {
-		top: 1rem;
-	}
-}
-
-@layer utilities {
-	.font-mono {
-		font-family:
-			"IBM Plex Mono",
-			ui-monospace,
-			SFMono-Regular,
-			Menlo,
-			Consolas,
-			monospace;
-	}
-
-	/* The newest log line lights up briefly, then settles. */
-	.log-newest {
-		animation: log-arrive 1.6s ease-out;
 	}
 }
 

@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
+import tailwindcss from "@tailwindcss/vite";
 
 import { cloudflare } from "@cloudflare/vite-plugin";
 
@@ -14,7 +15,7 @@ const worktreeDirs = [`${root}/.worktrees/`, `${root}/.claude/worktrees/`];
 
 // https://vite.dev/config/
 export default defineConfig({
-	plugins: [react(), cloudflare()],
+	plugins: [react(), tailwindcss(), cloudflare()],
 	server: {
 		// Fixed port so .claude/launch.json and the docs stay correct.
 		port: 4109,
