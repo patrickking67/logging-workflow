@@ -10,7 +10,7 @@ A Cloudflare Workers app: a React front end and a Worker that starts a four step
 
 - TypeScript, ES modules, npm with `package-lock.json` (use `npm ci`, not `npm install`, unless you are changing dependencies).
 - Worker: Workflows, Durable Objects (SQLite backed, WebSocket Hibernation API), Wrangler 4. Config in `wrangler.jsonc`.
-- Front end: React 19, Vite 7 with `@cloudflare/vite-plugin`, Tailwind CSS 3.
+- Front end: React 19, Vite 7 with `@cloudflare/vite-plugin`, Tailwind CSS 4 through `@tailwindcss/vite` (theme in `src/index.css`, no config file).
 - Tests: Vitest 3 with `@cloudflare/vitest-pool-workers`, running inside workerd.
 - Node.js 20.19 or later.
 

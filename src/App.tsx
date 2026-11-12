@@ -117,7 +117,7 @@ function App() {
 				</header>
 
 				{startError && (
-					<p role="alert" className="mt-6 rounded-md border border-fail/40 bg-fail/[0.06] p-3 text-sm text-fail">
+					<p role="alert" className="mt-6 rounded-md border border-fail/40 bg-fail/6 p-3 text-sm text-fail">
 						{startError}
 					</p>
 				)}

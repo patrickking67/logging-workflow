@@ -76,7 +76,7 @@ export function StepList({ statuses, events, approval }: StepListProps) {
 							<p className="mt-0.5 text-sm text-muted">{step.description}</p>
 
 							{showApproval && (
-								<div className="mt-3 rounded-md border border-wait/40 bg-wait/[0.06] p-3">
+								<div className="mt-3 rounded-md border border-wait/40 bg-wait/6 p-3">
 									<p className="text-sm text-ink">
 										The run is paused. Your answer is sent as a{" "}
 										<code className="font-mono text-[13px]">user-approval</code> event.
