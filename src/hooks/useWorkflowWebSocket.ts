@@ -19,26 +19,33 @@ function isUpdate(value: unknown): value is WorkflowUpdateMessage {
 	);
 }
 
+function initialState(instanceId: string | null): LiveRun {
+	return { connection: instanceId ? "connecting" : "idle", run: null };
+}
+
 /**
  * Subscribe to the live state of one run. Reconnects with backoff if the
  * socket drops before the run has finished.
  */
 export function useWorkflowWebSocket(instanceId: string | null): LiveRun {
-	const [live, setLive] = useState<LiveRun>({ connection: "idle", run: null });
+	const [live, setLive] = useState<LiveRun>(() => initialState(instanceId));
+
+	// Reset while rendering when the run changes, instead of from the effect.
+	// https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
+	const [trackedId, setTrackedId] = useState(instanceId);
+	if (trackedId !== instanceId) {
+		setTrackedId(instanceId);
+		setLive(initialState(instanceId));
+	}
 
 	useEffect(() => {
-		if (!instanceId) {
-			setLive({ connection: "idle", run: null });
-			return;
-		}
+		if (!instanceId) return;
 
 		let socket: WebSocket | null = null;
 		let retryTimer: ReturnType<typeof setTimeout> | undefined;
 		let attempt = 0;
 		let finished = false;
 		let disposed = false;
-
-		setLive({ connection: "connecting", run: null });
 
 		const connect = () => {
 			const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
