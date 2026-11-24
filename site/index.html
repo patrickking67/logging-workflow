@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>logging-workflow</title>
+	<meta name="description" content="Start a Cloudflare Workflow run and watch every step get logged live in the browser over a WebSocket from a Durable Object. Runs locally with two commands.">
+	<link rel="canonical" href="https://patrickking67.github.io/logging-workflow/">
+	<link rel="icon" href="favicon.svg" type="image/svg+xml">
+	<meta name="theme-color" content="#f6f3ec" media="(prefers-color-scheme: light)">
+	<meta name="theme-color" content="#15171a" media="(prefers-color-scheme: dark)">
+	<meta property="og:type" content="website">
+	<meta property="og:title" content="logging-workflow">
+	<meta property="og:description" content="Watch a Cloudflare Workflow run one step at a time, logged live over a WebSocket from a Durable Object.">
+	<meta property="og:url" content="https://patrickking67.github.io/logging-workflow/">
+	<meta property="og:image" content="https://patrickking67.github.io/logging-workflow/screenshot.jpg">
+	<meta property="og:image:alt" content="The run log page after an approved run: four completed steps and a timestamped log.">
+	<meta name="twitter:card" content="summary_large_image">
+	<link rel="stylesheet" href="style.css">
+</head>
+<body>
+	<a class="skip" href="#main">Skip to content</a>
+
+	<div class="wrap">
+		<header class="top">
+			<a class="brand" href="#top">logging-workflow</a>
+			<nav aria-label="Primary">
+				<ul>
+					<li><a href="#how">How it works</a></li>
+					<li><a href="#steps">The run</a></li>
+					<li><a href="#quickstart">Quick start</a></li>
+					<li><a href="#docs">Docs</a></li>
+					<li><a href="https://github.com/patrickking67/logging-workflow">Source</a></li>
+				</ul>
+			</nav>
+		</header>
+	</div>
+
+	<main id="main">
+		<div class="wrap" id="top">
+			<div class="hero">
+				<div>
+					<p class="eyebrow">Cloudflare Workers, Workflows, Durable Objects</p>
+					<h1>Watch a Workflow run, one step at a time.</h1>
+					<p class="lede">A small app that starts a four step Cloudflare Workflow and logs every step change in the browser, live, over a WebSocket from a Durable Object. The run pauses until you approve or reject it.</p>
+					<div class="actions">
+						<a class="btn btn-primary" href="#quickstart">Run it locally</a>
+						<a class="btn btn-quiet" href="https://github.com/patrickking67/logging-workflow">View the source</a>
+					</div>
+				</div>
+
+				<div class="log" aria-labelledby="log-title">
+					<div class="log-bar"><span id="log-title">Run log, replayed</span><button id="replay" type="button" class="btn-ghost" hidden>Replay</button></div>
+					<div class="log-body" id="log-body">
+						<div class="log-line"><span class="t">+00:00.000</span><span>process data</span><span class="s-started">started</span></div>
+						<div class="log-line"><span class="t">+00:01.002</span><span>process data</span><span class="s-done">done</span></div>
+						<div class="log-line"><span class="t">+00:01.004</span><span>wait 2 seconds</span><span class="s-started">started</span></div>
+						<div class="log-line"><span class="t">+00:03.007</span><span>wait 2 seconds</span><span class="s-done">done</span></div>
+						<div class="log-line"><span class="t">+00:03.008</span><span>wait for approval</span><span class="s-waiting">waiting for approval</span></div>
+						<div class="log-line"><span class="t">+00:13.532</span><span>wait for approval</span><span class="s-done">done (approved)</span></div>
+						<div class="log-line"><span class="t">+00:13.534</span><span>final</span><span class="s-started">started</span></div>
+						<div class="log-line"><span class="t">+00:14.537</span><span>final</span><span class="s-done">done</span></div>
+						<div class="log-line final"><span class="t">+00:14.537</span><span>run</span><span class="s-done">completed</span></div>
+					</div>
+					<p class="log-note">A recording of one real run, played back faster. There is no public deployment.</p>
+				</div>
+			</div>
+		</div>
+
+		<div class="wrap">
+			<section id="how">
+				<h2>How it works</h2>
+				<p class="sub">The Worker starts a Workflow instance. The Workflow reports each step to one Durable Object per run, which stores the log and pushes the full state to every connected browser.</p>
+				<ol class="flow">
+					<li><strong>Browser</strong><span>React page. Starts a run, opens a WebSocket, sends the approval.</span></li>
+					<li><strong>Worker</strong><span>Validates run IDs and bodies, routes requests, serves the page.</span></li>
+					<li><strong>MyWorkflow</strong><span>Four durable steps. Reports each change and any failure.</span></li>
+					<li><strong>WorkflowStatusDO</strong><span>Keeps step states and a log capped at 100 lines. Uses WebSocket Hibernation.</span></li>
+				</ol>
+				<p>Status reports run outside <code>step.do</code>, so they can repeat after a restart. The Durable Object ignores a report that changes nothing, which keeps replays harmless.</p>
+			</section>
+
+			<section id="steps">
+				<h2>The run</h2>
+				<p class="sub">Each step shows a different Workflows primitive.</p>
+				<ol class="steps">
+					<li><h3>process data</h3><p>Durable work that returns data, with <code>step.do</code>.</p></li>
+					<li><h3>wait 2 seconds</h3><p>A durable sleep, with <code>step.sleep</code>.</p></li>
+					<li><h3>wait for approval</h3><p>Pauses until you approve or reject, with <code>step.waitForEvent</code>. A timeout is logged and shown as a failed run.</p></li>
+					<li><h3>final</h3><p>Uses the results of the earlier steps and returns the run output.</p></li>
+				</ol>
+				<figure style="margin-top:2rem">
+					<img src="screenshot.jpg" width="800" height="547" alt="The run log page after an approved run: four completed steps on the left and a timestamped log on the right." loading="lazy">
+					<figcaption>The page after an approved run.</figcaption>
+				</figure>
+			</section>
+
+			<section id="quickstart">
+				<h2>Quick start</h2>
+				<p class="sub">Needs Node.js 20.19 or later. No Cloudflare account or login is needed to run it locally.</p>
+<pre><code>git clone https://github.com/patrickking67/logging-workflow.git
+cd logging-workflow
+npm ci
+npm run dev</code></pre>
+				<p>Open <code>http://localhost:4109</code> and select <strong>Start a run</strong>. Vite runs the Worker, the Workflow and the Durable Object locally through the Cloudflare Vite plugin.</p>
+				<p>Run <code>npm run check</code> for lint, type checks, the tests (inside the Workers runtime), the build and a <code>wrangler deploy --dry-run</code>.</p>
+				<div class="notice">
+					<p><strong>Before you deploy it.</strong> The routes have no authentication: anyone who knows a run ID can watch or approve that run. Read the security notes first.</p>
+				</div>
+			</section>
+
+			<section id="docs">
+				<h2>Docs</h2>
+				<ul class="links">
+					<li><a href="https://github.com/patrickking67/logging-workflow#readme">README: features, architecture, tests</a></li>
+					<li><a href="https://github.com/patrickking67/logging-workflow/blob/main/SECURITY.md">SECURITY: the demo's trust model</a></li>
+					<li><a href="https://github.com/patrickking67/logging-workflow/blob/main/CONTRIBUTING.md">CONTRIBUTING: setup, branches, commits</a></li>
+					<li><a href="https://github.com/patrickking67/logging-workflow/blob/main/CHANGELOG.md">CHANGELOG: changes since the template</a></li>
+					<li><a href="https://developers.cloudflare.com/workflows/">Cloudflare Workflows documentation</a></li>
+					<li><a href="https://developers.cloudflare.com/durable-objects/best-practices/websockets/">Durable Object WebSocket guide</a></li>
+				</ul>
+			</section>
+		</div>
+	</main>
+
+	<footer>
+		<div class="wrap">
+			<p>MIT licensed. Started from Cloudflare's <a href="https://github.com/cloudflare/templates/tree/main/workflows-starter-template">Workflows starter template</a> (MIT, Copyright (c) 2018 Cloudflare, Inc.).</p>
+			<p>This page is static. The app itself is not deployed.</p>
+		</div>
+	</footer>
+
+	<script>
+		(function () {
+			var body = document.getElementById("log-body");
+			var button = document.getElementById("replay");
+			if (!body || !button || !window.matchMedia) return;
+			if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+			var lines = Array.prototype.slice.call(body.children);
+			var timers = [];
+			function play() {
+				timers.forEach(clearTimeout);
+				timers = [];
+				lines.forEach(function (line) { line.style.visibility = "hidden"; });
+				lines.forEach(function (line, i) {
+					timers.push(setTimeout(function () { line.style.visibility = "visible"; }, 500 + i * 650));
+				});
+			}
+			button.hidden = false;
+			button.addEventListener("click", play);
+			play();
+		})();
+	</script>
+</body>
+</html>
