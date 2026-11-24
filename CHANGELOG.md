@@ -6,6 +6,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
+- A static project page in `site/`, published to GitHub Pages by `.github/workflows/pages.yml`. It shows a replay of a real run, how the pieces fit, and the quick start. The Worker is not deployed.
 - Run log: the Durable Object keeps a timestamped log of every step change (capped at 100 lines) and sends it with each update.
 - Reject button next to Approve. The decision is logged and returned as the run's output.
 - Failed runs, such as an approval timeout, are reported to the Durable Object and shown on the page.

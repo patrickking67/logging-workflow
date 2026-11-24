@@ -4,6 +4,7 @@
 
 ## Docs
 
+- [Project page](https://patrickking67.github.io/logging-workflow/): static overview with a replay of a real run
 - [README](https://github.com/patrickking67/logging-workflow/blob/main/README.md): what it does, quickstart, architecture, tests
 - [AGENTS.md](https://github.com/patrickking67/logging-workflow/blob/main/AGENTS.md): commands, layout, conventions and rules for coding agents
 - [CONTRIBUTING](https://github.com/patrickking67/logging-workflow/blob/main/CONTRIBUTING.md): setup, branches, commits, checks
