@@ -45,14 +45,26 @@ describe("WorkflowStatusDO", () => {
 
 	it("rejects unknown steps and statuses", async () => {
 		const stub = statusStub("do-validate");
-		// @ts-expect-error testing a bad value from an untyped caller
-		await expect(stub.updateStep("drop tables", "running")).rejects.toThrow(
-			"Unknown step",
-		);
-		// @ts-expect-error testing a bad value from an untyped caller
-		await expect(stub.updateStep("final", "pending")).rejects.toThrow(
-			"Unknown step status",
-		);
+		// Call inside the object. Over RPC, Vitest 5 reports the remote rejection
+		// as an unhandled error even though the caller awaits and catches it.
+		const messages = await runInDurableObject(stub, async (instance) => {
+			const caught: string[] = [];
+			for (const attempt of [
+				() => instance.updateStep("drop tables" as never, "running"),
+				() => instance.updateStep("final", "pending" as never),
+			]) {
+				try {
+					await attempt();
+				} catch (error) {
+					caught.push((error as Error).message);
+				}
+			}
+			return caught;
+		});
+		expect(messages).toEqual([
+			expect.stringContaining("Unknown step"),
+			expect.stringContaining("Unknown step status"),
+		]);
 		expect((await stub.getState()).events).toEqual([]);
 	});
 
