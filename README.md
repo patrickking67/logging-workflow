@@ -5,7 +5,7 @@
 
 A small Cloudflare Workers app that starts a Workflow run and logs every step live in the browser, streamed over a WebSocket from a Durable Object.
 
-There is no public deployment. Run it locally with the steps below.
+There is no public deployment of the app. A static project page with a replay of a real run is at https://patrickking67.github.io/logging-workflow/. Run the app locally with the steps below.
 
 ![The run log after an approved run](assets/screenshot.jpg)
 
