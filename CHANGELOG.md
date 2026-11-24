@@ -18,6 +18,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- Vite 7 to 8, globals 16 to 17, Vitest 3 to 5. The Workers test integration moved from `@cloudflare/vitest-pool-workers` 0.10 to its successor `@cloudflare/vitest-plugin` 1.9 (a `cloudflareTest()` Vite plugin in `vitest.config.ts`). Storage is now isolated per test file, `isolatedStorage` is gone, and the old two-run `npm test` split is no longer needed. The Durable Object validation test calls the object directly with `runInDurableObject`, because a rejected RPC call now fails the run as an unhandled error.
 - Tailwind CSS 3 to 4, built with `@tailwindcss/vite`. The theme moved from `tailwind.config.js` into `src/index.css`. Tailwind 4 needs Safari 16.4, Chrome 111 or Firefox 128 and later.
 - Redesigned the page around the run log and an ordered step list, with light and dark themes, visible focus, reduced motion support and a layout that holds at 375px.
 - The dev server runs on port 4109 instead of 5173.

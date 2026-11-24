@@ -11,7 +11,7 @@ A Cloudflare Workers app: a React front end and a Worker that starts a four step
 - TypeScript, ES modules, npm with `package-lock.json` (use `npm ci`, not `npm install`, unless you are changing dependencies).
 - Worker: Workflows, Durable Objects (SQLite backed, WebSocket Hibernation API), Wrangler 4. Config in `wrangler.jsonc`.
 - Front end: React 19, Vite 8 with `@cloudflare/vite-plugin`, Tailwind CSS 4 through `@tailwindcss/vite` (theme in `src/index.css`, no config file).
-- Tests: Vitest 3 with `@cloudflare/vitest-pool-workers`, running inside workerd.
+- Tests: Vitest 5 with `@cloudflare/vitest-plugin` (`cloudflareTest()` in `vitest.config.ts`), running inside workerd.
 - Node.js 20.19 or later.
 
 ## Layout
@@ -38,7 +38,7 @@ All verified on 2026-11-07.
 | Everything | `npm run check` | Lint, typecheck, tests, build, `wrangler deploy --dry-run`. Must pass before you commit |
 | Lint | `npm run lint` | ESLint, zero warnings allowed |
 | Typecheck | `npm run typecheck` | `tsc -b` over app, node and worker projects |
-| Test | `npm test` | Vitest in workerd, two runs: everything else, then `test/workflow.test.ts` alone. Tests that run a Workflow must go in that file (see `vitest.config.ts`). Info lines such as "Instance dispose" and "uncaught exception" are expected; read the pass counts |
+| Test | `npm test` | Vitest in workerd, one run. Info lines such as "Instance dispose" and "uncaught exception" are expected; read the pass counts. Test that a Durable Object method throws with `runInDurableObject`, not over RPC: an RPC rejection fails the run as an unhandled error |
 | Build | `npm run build` | Into `dist/` |
 | Preview build | `npm run preview` | Builds, then serves on http://localhost:4173 with the Worker |
 | Worker types | `npm run cf-typegen` | Run after changing bindings in `wrangler.jsonc`, then commit the regenerated file |
