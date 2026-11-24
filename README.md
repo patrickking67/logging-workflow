@@ -23,7 +23,7 @@ This repo started from Cloudflare's [Workflows Starter Template](https://github.
 
 ## Quickstart
 
-Needs Node.js 20.19 or later (Vite 7). No Cloudflare account or login is needed to run locally.
+Needs Node.js 20.19 or later (Vite 8). No Cloudflare account or login is needed to run locally.
 
 ```bash
 npm ci
